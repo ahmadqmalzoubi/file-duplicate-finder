@@ -72,7 +72,7 @@ for key, values in duplicate_blake2b_dict_first4k.items():
 
 duplicate_files_dict = {}
 
-for key, value in duplicate_blake2b_dict_last4k.items():
+for key, values in duplicate_blake2b_dict_last4k.items():
     if len(values) > 1:
         duplicate_files_dict[key] = values
 
