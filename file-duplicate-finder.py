@@ -70,8 +70,14 @@ for key, values in duplicate_blake2b_dict_first4k.items():
         duplicate_blake2b_dict_last4k.setdefault(
             blake2bsum_last4k(value), []).append(value)
 
+duplicate_files_dict = {}
+
+for key, value in duplicate_blake2b_dict_last4k.items():
+    if len(values) > 1:
+        duplicate_files_dict[key] = values
+
 print("\n# Duplicates:\n")
-for hash, files in duplicate_blake2b_dict_last4k.items():
+for hash, files in duplicate_files_dict.items():
     print("hash: ", hash)
     for file in files:
         print(file)
@@ -79,9 +85,9 @@ for hash, files in duplicate_blake2b_dict_last4k.items():
 
 print(
     f"\n## Searching for duplicate files in the Base Directory: {base_dir} ->\n")
-number_of_groups = len(duplicate_blake2b_dict_last4k)
+number_of_groups = len(duplicate_files_dict)
 number_of_all_files = 0
-for files in duplicate_blake2b_dict_last4k.values():
+for files in duplicate_files_dict.values():
     for file in files:
         number_of_all_files += 1
 number_of_duplicate_files = number_of_all_files - number_of_groups
