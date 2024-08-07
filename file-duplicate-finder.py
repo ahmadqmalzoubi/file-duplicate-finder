@@ -4,6 +4,7 @@ import os
 import hashlib
 import argparse
 
+
 def get_files_recursively(baseDir):
     for dentry in os.scandir(baseDir):
         if dentry.is_dir(follow_symlinks=False):
@@ -13,35 +14,46 @@ def get_files_recursively(baseDir):
 
 
 def blake2bsum_first4k(filename):
-    BUF_SIZE = 4096
+    buffer_size = 4096
     sum = hashlib.blake2b()
     with open(filename, 'rb') as f:
-        data = f.read(BUF_SIZE)
+        data = f.read(buffer_size)
         sum.update(data)
-    
+
     return sum.hexdigest()
 
 
 def blake2bsum_last4k(filename):
     sum = hashlib.blake2b()
     with open(filename, 'rb') as f:
-        f.seek(-50, os.SEEK_END)
+        f.seek(-4096, os.SEEK_END)
         data = f.read()
         sum.update(data)
-    
+
     return sum.hexdigest()
 
 
-parser = argparse.ArgumentParser(description='Find the duplicate files and store them in a python dictionary')
-parser.add_argument('--dir', help='path of the directory to search for file duplicates')
+parser = argparse.ArgumentParser(
+    description='Find the duplicate files and store them in a python dictionary')
+parser.add_argument('basedir', nargs='?', default=".",
+                    help='path of the directory to search for file duplicates')
+parser.add_argument('--minsize', nargs='?', default=4096, type=int,
+                    help='minumum size in bytes of the files to be searched')
+parser.add_argument('--maxsize', nargs='?', default=4294967296, type=int,
+                    help='maximum size in bytes of the files to be searched')
 args = parser.parse_args()
 
 
 blake2b_index_dict = {}
 
-for file in get_files_recursively(args.dir):
-    if os.stat(file.path).st_size > 4096:
-        blake2b_index_dict.setdefault(blake2bsum_first4k(file.path), []).append(file.path)
+base_dir = args.basedir
+file_max_size = args.maxsize
+file_min_size = args.minsize
+
+for file in get_files_recursively(base_dir):
+    if os.stat(file.path).st_size > file_min_size and os.stat(file.path).st_size < file_max_size:
+        blake2b_index_dict.setdefault(
+            blake2bsum_first4k(file.path), []).append(file.path)
 
 
 duplicate_blake2b_dict_first4k = {}
@@ -55,7 +67,8 @@ duplicate_blake2b_dict_last4k = {}
 
 for key, values in duplicate_blake2b_dict_first4k.items():
     for value in values:
-        duplicate_blake2b_dict_last4k.setdefault(blake2bsum_last4k(value), []).append(value)
+        duplicate_blake2b_dict_last4k.setdefault(
+            blake2bsum_last4k(value), []).append(value)
 
 print("\n# Duplicates:\n")
 for hash, files in duplicate_blake2b_dict_last4k.items():
@@ -64,6 +77,8 @@ for hash, files in duplicate_blake2b_dict_last4k.items():
         print(file)
     print("")
 
+print(
+    f"\n## Searching for duplicate files in the Base Directory: {base_dir} ->\n")
 number_of_groups = len(duplicate_blake2b_dict_last4k)
 number_of_all_files = 0
 for files in duplicate_blake2b_dict_last4k.values():
@@ -71,4 +86,7 @@ for files in duplicate_blake2b_dict_last4k.values():
         number_of_all_files += 1
 number_of_duplicate_files = number_of_all_files - number_of_groups
 
-print(f"There are {number_of_groups} groups of duplicate files with {number_of_all_files} total number of files in these groups, whereof {number_of_duplicate_files} are duplicates.\n")
+print(
+    f"There are {number_of_groups} groups of duplicate files with \
+{number_of_all_files} total number of files in these groups, whereof \
+{number_of_duplicate_files} are duplicates.\n")
