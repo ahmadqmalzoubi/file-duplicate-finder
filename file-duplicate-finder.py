@@ -44,53 +44,62 @@ parser.add_argument('--maxsize', nargs='?', default=4294967296, type=int,
 args = parser.parse_args()
 
 
-blake2b_index_dict = {}
-
 base_dir = args.basedir
 file_max_size = args.maxsize
 file_min_size = args.minsize
 
+files_dict = {}
+
 for file in get_files_recursively(base_dir):
-    if os.stat(file.path).st_size > file_min_size and os.stat(file.path).st_size < file_max_size:
-        blake2b_index_dict.setdefault(
-            blake2bsum_first4k(file.path), []).append(file.path)
-
-
-duplicate_blake2b_dict_first4k = {}
-
-for key, values in blake2b_index_dict.items():
-    if len(values) > 1:
-        duplicate_blake2b_dict_first4k[key] = values
-
-
-duplicate_blake2b_dict_last4k = {}
-
-for key, values in duplicate_blake2b_dict_first4k.items():
-    for value in values:
-        duplicate_blake2b_dict_last4k.setdefault(
-            blake2bsum_last4k(value), []).append(value)
+    if os.stat(file.path).st_size > 0 and os.stat(file.path).st_size > file_min_size and os.stat(file.path).st_size < file_max_size:
+        if os.stat(file.path).st_size in files_dict:
+            if blake2bsum_first4k(file.path) in files_dict[os.stat(file.path).st_size]:
+                files_dict[os.stat(file.path).st_size][blake2bsum_first4k(
+                    file.path)].append(file.path)
+            else:
+                files_dict[os.stat(file.path).st_size][blake2bsum_first4k(
+                    file.path)] = []
+                files_dict[os.stat(file.path).st_size][blake2bsum_first4k(
+                    file.path)].append(file.path)
+        else:
+            files_dict[os.stat(file.path).st_size] = {}
+            files_dict[os.stat(file.path).st_size][blake2bsum_first4k(
+                file.path)] = []
+            files_dict[os.stat(file.path).st_size][blake2bsum_first4k(
+                file.path)].append(file.path)
 
 duplicate_files_dict = {}
 
-for key, values in duplicate_blake2b_dict_last4k.items():
-    if len(values) > 1:
-        duplicate_files_dict[key] = values
+for size, hashes_dict in files_dict.items():
+    for hash in hashes_dict:
+        if len(files_dict[size][hash]) > 1:
+            if size in duplicate_files_dict:
+                duplicate_files_dict[size][hash] = files_dict[size][hash]
+            else:
+                duplicate_files_dict[size] = {}
+                duplicate_files_dict[size][hash] = files_dict[size][hash]
+
+
+number_of_groups = 0
+number_of_all_files = 0
 
 print("\n# Duplicates:\n")
-for hash, files in duplicate_files_dict.items():
-    print("hash: ", hash)
-    for file in files:
-        print(file)
+print("File Size\tFiles Hash with the list of duplicate files\n")
+
+for size, hashes_dict in duplicate_files_dict.items():
+    print(size)
+    for hash in hashes_dict:
+        number_of_groups += 1
+        number_of_all_files += len(hashes_dict[hash])
+        print("\t", hash)
+        print("\t", hashes_dict[hash])
+        print("")
     print("")
+
+number_of_duplicate_files = number_of_all_files - number_of_groups
 
 print(
     f"\n## Searching for duplicate files in the Base Directory: {base_dir} ->\n")
-number_of_groups = len(duplicate_files_dict)
-number_of_all_files = 0
-for files in duplicate_files_dict.values():
-    for file in files:
-        number_of_all_files += 1
-number_of_duplicate_files = number_of_all_files - number_of_groups
 
 print(
     f"There are {number_of_groups} groups of duplicate files with \
