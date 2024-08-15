@@ -54,21 +54,17 @@ files_dict = {}
 for file in get_files_recursively(base_dir):
     file_size = os.stat(file.path).st_size
     if file_size > 0 and file_min_size < file_size < file_max_size:
+        file_hash = blake2bsum_first4k(file.path)
         if file_size in files_dict:
-            if blake2bsum_first4k(file.path) in files_dict[file_size]:
-                files_dict[file_size][blake2bsum_first4k(
-                    file.path)].append(file.path)
+            if file_hash in files_dict[file_size]:
+                files_dict[file_size][file_hash].append(file.path)
             else:
-                files_dict[file_size][blake2bsum_first4k(
-                    file.path)] = []
-                files_dict[file_size][blake2bsum_first4k(
-                    file.path)].append(file.path)
+                files_dict[file_size][file_hash] = []
+                files_dict[file_size][file_hash].append(file.path)
         else:
             files_dict[file_size] = {}
-            files_dict[file_size][blake2bsum_first4k(
-                file.path)] = []
-            files_dict[file_size][blake2bsum_first4k(
-                file.path)].append(file.path)
+            files_dict[file_size][file_hash] = []
+            files_dict[file_size][file_hash].append(file.path)
 
 duplicate_files_dict = {}
 
