@@ -10,7 +10,10 @@ def get_files_recursively(baseDir):
         if dentry.is_dir(follow_symlinks=False):
             yield from get_files_recursively(dentry.path)
         else:
-            yield dentry
+            if dentry.is_symlink():
+                continue
+            else:
+                yield dentry
 
 
 def blake2bsum_first4k(filename):
