@@ -19,7 +19,6 @@ def blake2bsum_first4k(filename):
     with open(filename, 'rb') as f:
         data = f.read(buffer_size)
         sum.update(data)
-
     return sum.hexdigest()
 
 
@@ -29,7 +28,6 @@ def blake2bsum_last4k(filename):
         f.seek(-4096, os.SEEK_END)
         data = f.read()
         sum.update(data)
-
     return sum.hexdigest()
 
 
@@ -51,21 +49,22 @@ file_min_size = args.minsize
 files_dict = {}
 
 for file in get_files_recursively(base_dir):
-    if os.stat(file.path).st_size > 0 and os.stat(file.path).st_size > file_min_size and os.stat(file.path).st_size < file_max_size:
-        if os.stat(file.path).st_size in files_dict:
-            if blake2bsum_first4k(file.path) in files_dict[os.stat(file.path).st_size]:
-                files_dict[os.stat(file.path).st_size][blake2bsum_first4k(
+    file_size = os.stat(file.path).st_size
+    if file_size > 0 and file_min_size < file_size < file_max_size:
+        if file_size in files_dict:
+            if blake2bsum_first4k(file.path) in files_dict[file_size]:
+                files_dict[file_size][blake2bsum_first4k(
                     file.path)].append(file.path)
             else:
-                files_dict[os.stat(file.path).st_size][blake2bsum_first4k(
+                files_dict[file_size][blake2bsum_first4k(
                     file.path)] = []
-                files_dict[os.stat(file.path).st_size][blake2bsum_first4k(
+                files_dict[file_size][blake2bsum_first4k(
                     file.path)].append(file.path)
         else:
-            files_dict[os.stat(file.path).st_size] = {}
-            files_dict[os.stat(file.path).st_size][blake2bsum_first4k(
+            files_dict[file_size] = {}
+            files_dict[file_size][blake2bsum_first4k(
                 file.path)] = []
-            files_dict[os.stat(file.path).st_size][blake2bsum_first4k(
+            files_dict[file_size][blake2bsum_first4k(
                 file.path)].append(file.path)
 
 duplicate_files_dict = {}
