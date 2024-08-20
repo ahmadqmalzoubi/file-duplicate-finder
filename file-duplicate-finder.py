@@ -34,6 +34,14 @@ def blake2bsum_last4k(filename):
     return sum.hexdigest()
 
 
+def human_readable_size(num, suffix="B"):
+    for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
+        if abs(num) < 1024.0:
+            return f"{num:3.1f} {unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Yi{suffix}"
+
+
 parser = argparse.ArgumentParser(
     description='Find the duplicate files and store them in a python dictionary')
 parser.add_argument('basedir', nargs='?', default=".",
@@ -85,7 +93,7 @@ print("\n# Duplicates:\n")
 print("File Size\tFiles Hash with the list of duplicate files\n")
 
 for size, hashes_dict in duplicate_files_dict.items():
-    print(size)
+    print(human_readable_size(size))
     for hash in hashes_dict:
         number_of_groups += 1
         number_of_all_files += len(hashes_dict[hash])
