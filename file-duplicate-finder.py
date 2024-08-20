@@ -45,7 +45,7 @@ parser.add_argument('--maxsize', nargs='?', default=4294967296, type=int,
 args = parser.parse_args()
 
 
-base_dir = args.basedir
+base_dir = os.path.abspath(args.basedir)
 file_max_size = args.maxsize
 file_min_size = args.minsize
 
